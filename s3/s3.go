@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -129,7 +130,10 @@ func (fs *s3FS) Lstat(name string) (os.FileInfo, error) {
 	}, nil
 }
 
-func (fs *s3FS) MkdirAll(path string, perm os.FileMode) error { return nil }
+func (fs *s3FS) MkdirAll(path string, perm os.FileMode) error {
+	_, err := fs.OpenFile(fmt.Sprintf("%s/", filepath.Clean(path)), os.O_CREATE, perm)
+	return err
+}
 
 func (fs *s3FS) OpenFile(name string, flag int, perm os.FileMode) (wkfs.FileWriter, error) {
 	bucket, filename, err := fs.parseName(name)
