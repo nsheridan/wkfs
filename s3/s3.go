@@ -93,6 +93,12 @@ func (fs *s3FS) Open(name string) (wkfs.File, error) {
 		Key:    &fileName,
 	})
 	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "NoSuchKey", "NoSuchBucket":
+				return nil, os.ErrNotExist
+			}
+		}
 		return nil, err
 	}
 	defer obj.Body.Close()
@@ -133,7 +139,7 @@ func (fs *s3FS) Lstat(name string) (os.FileInfo, error) {
 }
 
 func (fs *s3FS) MkdirAll(path string, perm os.FileMode) error {
-	_, err := fs.OpenFile(fmt.Sprintf("%s/", filepath.Clean(path)), os.O_CREATE, perm)
+	_, err := fs.OpenFile(fmt.Sprintf("%s/", filepath.Clean(path)), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	return err
 }
 
