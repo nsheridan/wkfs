@@ -28,6 +28,8 @@ type Options struct {
 	SecretKey string
 }
 
+var _ wkfs.FileSystem = (*s3FS)(nil)
+
 // Register the /s3/ filesystem as a well-known filesystem.
 func Register(opts *Options) {
 	if opts == nil {
@@ -152,6 +154,19 @@ func (fs *s3FS) OpenFile(name string, flag int, perm os.FileMode) (wkfs.FileWrit
 		}
 	}
 	return NewS3file(bucket, filename, fs.sc)
+}
+
+func (fs *s3FS) Remove(name string) error {
+	var err error
+	bucket, filename, err := fs.parseName(name)
+	if err != nil {
+		return err
+	}
+	_, err = fs.sc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+	})
+	return err
 }
 
 type statInfo struct {
